@@ -1,0 +1,47 @@
+<!doctype html>
+<!--
+Copyright 2018 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>Go wasm for form</title>
+</head>
+
+<body>
+	<!--
+	Add the following polyfill for Microsoft Edge 17/18 support:
+	<script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding.min.js"></script>
+	(see https://caniuse.com/#feat=textencoder)
+	-->
+	<script src="wasm_exec.js"></script>
+	<script>
+		if (!WebAssembly.instantiateStreaming) { // polyfill
+			WebAssembly.instantiateStreaming = async (resp, importObject) => {
+				const source = await (await resp).arrayBuffer();
+				return await WebAssembly.instantiate(source, importObject);
+			};
+		}
+
+		const go = new Go();
+		let mod, inst;
+		WebAssembly.instantiateStreaming(fetch("form.wasm"), go.importObject).then((result) => {
+			mod = result.module;
+			inst = result.instance;
+			go.run(inst);
+		}).catch((err) => {
+			console.error(err);
+		});
+		function calc() {
+			console.log(goCalc());
+		}
+	</script>
+	<p><label>計算回数は？&nbsp;<input type="number" id="countText" /></label>&nbsp;
+	<button id="calcButton" onclick="calc();">計算</button>&nbsp;</p>
+	<p>円周率は <span id="resultText">未計算</span> です。</p>
+</body>
+
+</html>
